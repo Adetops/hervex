@@ -59,7 +59,7 @@ async def update_goal_status(session_id: str, status: GoalStatus):
 
 async def update_goal_tasks(session_id: str, tasks: list):
     """
-    Saves generated task list into goal document, called by the
+    Saves generated task list into MongoDB goal document, called by the
     Planner after breaking down the goal.
     
     Args:
