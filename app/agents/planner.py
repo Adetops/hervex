@@ -1,15 +1,22 @@
 # The brain of HERVEX. It receives a goals, sends it to
-# Claude with a structured prompt, and parses the response
+# Groq with a structured prompt, and parses the response
 # into a list of executable tasks. No execution, planning only.
+# planner.py — updated for Groq
+# Groq uses an OpenAI-compatible client interface
 
-import anthropic, json, uuid
+
+from groq import Groq
+import json, uuid
 from typing import List
 from app.core.config import settings
-from app.core.settings import LLM_MAX_TOKENS, LLM_MODEL, MAX_TASKS_PER_GOAL
+from app.core.settings import LLM_MAX_TOKENS, LLM_PLANNER_MODEL, MAX_TASKS_PER_GOAL
 from app.db.documents.task_document import TaskDocument
 
 
-client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+# Initialize Groq client with API key from settings
+# Groq's client interface mirrors OpenAI's — messages, system, model
+client = Groq(api_key=settings.GROQ_API_KEY)
+# client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
 
 PLANNER_SYSTEM_PROMPT = """
 You are HERVEX, an autonomus AI agent planner.
@@ -36,7 +43,7 @@ Response format:
 
 async def plan_goal(goal: str) -> List[dict]:
     """
-    Sends the goal to Claude and returns a strctured list of tasks.
+    Sends the goal to Groq LLM and returns a strctured list of tasks.
     
     Args:
         goal: The raw goal string submitted by client
@@ -45,35 +52,38 @@ async def plan_goal(goal: str) -> List[dict]:
         A list of task dictionaries built by TaskDocument.create()
         
     Raises:
-        ValueError: if Claude returns an invalid or unparseable response.
+        ValueError: if the LLM returns an invalid or unparseable response.
     """
     
-    # sending goal to Claude with the planner system prompt
-    # using claude-sonnet cause of its strong instruction-following ability
-    message = client.messages.create(
-        model=LLM_MODEL,
+    # Groq uses the same chat completions format as OpenAI
+    # system prompt goes in the system role message
+    # goal goes in the user role message
+    response = client.chat.completions.create(
+        model=LLM_PLANNER_MODEL,
         max_tokens=LLM_MAX_TOKENS,
-        system=PLANNER_SYSTEM_PROMPT,
         messages=[
+            {
+                "role": "system",
+                "content": PLANNER_SYSTEM_PROMPT
+            },
             {
                 "role": "user",
                 "content": f"Goal: {goal}"
             }
         ]
     )
-    
-    # extract raw text response from Claude
-    raw_response = message.content[0].text
-    
+
+    # Extract the raw text response from the LLM
+    raw_response = response.choices[0].message.content
+
     try:
-        # parse claude JSON response into a dict
+        # Parse the JSON response into a Python dictionary
         parsed = json.loads(raw_response)
         raw_tasks = parsed.get("tasks", [])
     except json.JSONDecodeError:
-        raise ValueError(f"Planner received invalid JSON from Claude: {raw_response}")
-    
-    # convert raw task dict into structure TaskDocument
-    # Each task gets a unique ID for tracking through the executor
+        raise ValueError(f"Planner received invalid JSON from Groq: {raw_response}")
+
+    # Convert raw task dictionaries into structured TaskDocuments
     tasks = []
     for raw_task in raw_tasks:
         task = TaskDocument.create(
@@ -82,6 +92,5 @@ async def plan_goal(goal: str) -> List[dict]:
             tool=raw_task.get("tool") if raw_task.get("tool") != "none" else None
         )
         tasks.append(task)
-    
+
     return tasks
-        

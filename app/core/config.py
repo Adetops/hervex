@@ -11,7 +11,7 @@ load_dotenv()
 
 class Settings(BaseSettings):
     # Anthropic API key to access Claude LLM
-    ANTHROPIC_API_KEY: str
+    GROQ_API_KEY: str
     
     # MongoDB uri string and database name
     MONGODB_URI: str

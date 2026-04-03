@@ -75,3 +75,18 @@ async def update_goal_tasks(session_id: str, tasks: list):
             "updated_at": datetime.now(timezone.utc).isoformat()
         }}
     )
+    
+
+async def get_goal_with_tasks(session_id: str) -> Optional[dict]:
+    """
+    Retrieves a full goal document including its embedded task list.
+    Used by the status endpoint to return full run progress to the client.
+
+    Args:
+        session_id: The unique session identifier
+
+    Returns:
+        The full goal document with tasks, or None if not found
+    """
+    db = get_database()
+    return await db.goals.find_one({"session_id": session_id})

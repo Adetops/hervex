@@ -3,7 +3,7 @@
 
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from app.routers import goals, health
+from app.routers import goals, health, runs
 from app.db.connection import close_mongodb_connection, connect_to_mongodb
 from app.core.settings import APP_NAME
 
@@ -21,5 +21,6 @@ app = FastAPI(
 )
 
 app.include_router(goals.router)
+app.include_router(runs.router)
 app.include_router(health.router)
 
