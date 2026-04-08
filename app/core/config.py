@@ -4,14 +4,12 @@
 
 
 from pydantic_settings import BaseSettings
-from dotenv import load_dotenv
+from pydantic import Field
 
-
-load_dotenv()
 
 class Settings(BaseSettings):
-    # Anthropic API key to access Claude LLM
-    GROQ_API_KEY: str
+    # Groq API key for Llama/Gemma models
+    SECRET_GROQ_KEY: str = Field(..., str_strip_whitespace=True)
     
     # MongoDB uri string and database name
     MONGODB_URI: str
@@ -24,9 +22,9 @@ class Settings(BaseSettings):
     class Config:
         ''' Tells pydantic-settings where to locate .env file
         '''
-        
         env_file = ".env"
         extra = "ignore"
+        env_file_encoding = 'utf-8'
 
 # single shared instance
 settings = Settings()

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from app.enums.status import TaskStatus
 
 
-class TaskReponse(BaseModel):
+class TaskResponse(BaseModel):
     """
     Represents a single task as return by the API
     Exposes only what the client needs - internal fields stay in the document layer
