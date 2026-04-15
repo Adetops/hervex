@@ -2,13 +2,10 @@
 # It receives a goal's session ID, loads all pending tasks,
 # and processes them sequentially.
 #
-# The executor does not know HOW to execute a task — it delegates
-# to the tool registry for tool-based tasks and to the LLM
-# for reasoning-only tasks.
-#
-# Design principle: one task failure should not stop the entire run.
-# The executor logs the failure, marks the task as failed,
-# and moves to the next task.
+# _execute_task now makes real tool calls via the Tool Registry
+# instead of returning placeholder strings.
+# Reasoning-only tasks still uses a placeholder until Phase 6
+# when memory context is added.
 
 from typing import Optional
 from app.db.collections.goals import (
@@ -25,6 +22,7 @@ from app.db.collections.runs import (
 )
 from app.db.documents.run_document import RunDocument
 from app.enums.status import GoalStatus, TaskStatus
+from app.tools.registry import get_tool, list_available_tools
 from app.core.settings import APP_NAME
 
 async def execute_goal(session_id: str):
@@ -72,8 +70,6 @@ async def execute_goal(session_id: str):
         await update_task_status(session_id, task_id, TaskStatus.RUNNING)
 
         try:
-            # Attempt to execute the task
-            # In Phase 3, execution is simulated — real tool calls come in Phase 4
             result = await _execute_task(description, tool)
 
             # Mark the task as completed and save the result
@@ -105,26 +101,37 @@ async def execute_goal(session_id: str):
 
 async def _execute_task(description: str, tool: Optional[str]) -> str:
     """
-    Executes a single task by delegating to the appropriate handler.
+    Executes a single task by delegating the appropriate tool from the Tool Registry.
 
-    In Phase 3, tool-based tasks return a placeholder result.
-    Real tool execution is wired in Phase 4.
+    For tool-based tasks: retrieves the tool function from the registry
+    and calls it with the task description as the query. 
 
-    In Phase 3, reasoning-only tasks return a simulated LLM response.
-    Real LLM reasoning per task is wired in Phase 6 with memory context.
+    For reasoning-only tasks: returns a placeholder until Phase 6 when Redis memory context is integrated.
 
     Args:
-        description: What the task requires
+        description: The task description - used as the tool query
         tool: The tool to use, or None for reasoning-only tasks
 
     Returns:
-        A string result from the task execution
+        A string result from the tool call or reasoning placeholder
+    
+    Raises:
+        ValueError: If the specified tool is not found in the registry. 
     """
 
-    if tool == "web_search":
-        # Placeholder — replaced with real web search in Phase 4
-        return f"[Phase 3 placeholder] Web search result for: {description}"
+    if tool:
+        tool_fn = get_tool(tool)
+        
+        if not tool_fn:
+            # Tool was assigned by planner but doesn't exist in registry
+            # raises an error so the executor logs it as a failed task
+            raise ValueError(f"Tool '{tool}' not found in registry. Available tools: {list_available_tools()}")
+        
+        # Call the tool function with task description as search query
+        # All tool functions accept a string query as their first argument
+        result = await tool_fn(description)
+        return result 
 
     # Reasoning-only task — no tool required
-    # Placeholder — will use memory context in Phase 6
-    return f"[Phase 3 placeholder] Reasoning result for: {description}"
+    # will use accumulated memory context in Phase 6
+    return f"[Reasoning placeholder] Task noted for aggregation: {description}"

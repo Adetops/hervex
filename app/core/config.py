@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     # Groq API key for Llama/Gemma models
     SECRET_GROQ_KEY: str = Field(..., str_strip_whitespace=True)
     
+    # Tavily API tool for web search tool
+    TAVILY_API_KEY: str
+    
     # MongoDB uri string and database name
     MONGODB_URI: str
     MONGODB_DB_NAME: str

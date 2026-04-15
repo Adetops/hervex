@@ -7,10 +7,10 @@ from app.core.config import settings
 # LLM model to use for all Claude API calls
 # LLM_MODEL = "claude-sonnet-4-20250514"
 
-# Model for the planner — needs strong instruction following and JSON output
+# Model for planning and task reasoning
 LLM_PLANNER_MODEL = "llama-3.3-70b-versatile"
 
-# Model for the aggregator — needs strong synthesis for final response
+# Model for final response aggregation
 # Using the same model keeps things consistent
 # Swap to llama-3.1-8b-instant if you hit rate limits
 LLM_AGGREGATOR_MODEL = "llama-3.3-70b-versatile"
