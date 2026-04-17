@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     MONGODB_URI: str
     MONGODB_DB_NAME: str
     
+    # Redis URL used as Celery broker and result backend
+    # Celery uses this to queue tasks and store results
+    REDIS_URL: str = "redis://localhost:6379/0"
+    
     # App environment - "dev" or "prod"
     APP_ENV: str = "development"
     
