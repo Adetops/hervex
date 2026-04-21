@@ -2,10 +2,11 @@
 # It receives a goal's session ID, loads all pending tasks,
 # and processes them sequentially.
 #
-# _execute_task now makes real tool calls via the Tool Registry
-# instead of returning placeholder strings.
-# Reasoning-only tasks still uses a placeholder until Phase 6
-# when memory context is added.
+# Two key changes:
+# 1. After each successful task, result is stored in Redis memory
+# 2. Reasoning-only tasks now read accumulated context from Redis
+#    and pass it to the LLM
+
 
 from typing import Optional
 from app.db.collections.goals import (
@@ -22,8 +23,17 @@ from app.db.collections.runs import (
 )
 from app.db.documents.run_document import RunDocument
 from app.enums.status import GoalStatus, TaskStatus
-from app.tools.registry import get_tool, list_available_tools
+from app.tools.registry import get_tool
 from app.core.settings import APP_NAME
+from app.memory.context import store_task_result, get_session_context, clear_session_memory
+from groq import Groq
+from app.core.config import settings
+from app.core.settings import LLM_PLANNER_MODEL, LLM_MAX_TOKENS
+
+
+# Groq client for reasoning-only task execution
+# Same client as the planner — reused here for consistency
+_llm_client = Groq(api_key=settings.SECRET_GROQ_KEY)
 
 async def execute_goal(session_id: str):
     """
@@ -70,7 +80,7 @@ async def execute_goal(session_id: str):
         await update_task_status(session_id, task_id, TaskStatus.RUNNING)
 
         try:
-            result = await _execute_task(description, tool)
+            result = await _execute_task(session_id, description, tool)
 
             # Mark the task as completed and save the result
             await update_task_status(
@@ -79,6 +89,11 @@ async def execute_goal(session_id: str):
                 TaskStatus.COMPLETED,
                 result=result
             )
+            
+            # Store the result in Redis memory for subsequent tasks
+            # This is the core of Phase 6 — every result builds context
+            await store_task_result(session_id, description, result)
+
             await increment_completed_tasks(session_id)
             print(f"[{APP_NAME}] Executor: Task {task_id} completed.")
 
@@ -99,39 +114,79 @@ async def execute_goal(session_id: str):
     await complete_run(session_id, GoalStatus.AGGREGATING)
     print(f"[{APP_NAME}] Executor: All tasks processed for session {session_id}. Ready for aggregation.")
 
-async def _execute_task(description: str, tool: Optional[str]) -> str:
+async def _execute_task(session_id: str, description: str, tool: Optional[str]) -> str:
     """
-    Executes a single task by delegating the appropriate tool from the Tool Registry.
-
+    Executes a single task.
+    
     For tool-based tasks: retrieves the tool function from the registry
     and calls it with the task description as the query. 
 
-    For reasoning-only tasks: returns a placeholder until Phase 6 when Redis memory context is integrated.
+    Reasoning-only tasks: reads accumulated Redis memory and passes
+    it as context to the LLM — replacing the Phase 3/4 placeholder.
 
     Args:
-        description: The task description - used as the tool query
-        tool: The tool to use, or None for reasoning-only tasks
+        session_id: Used to read and write Redis memory
+        description: The task description — used as tool query or LLM prompt
+        tool: The tool name string, or None for reasoning-only tasks
 
     Returns:
-        A string result from the tool call or reasoning placeholder
-    
+        A string result from the tool call or LLM reasoning
+
     Raises:
-        ValueError: If the specified tool is not found in the registry. 
+        ValueError: If the specified tool is not found in the registry
     """
 
     if tool:
+        # Tool-based task — look up and call the tool
         tool_fn = get_tool(tool)
-        
-        if not tool_fn:
-            # Tool was assigned by planner but doesn't exist in registry
-            # raises an error so the executor logs it as a failed task
-            raise ValueError(f"Tool '{tool}' not found in registry. Available tools: {list_available_tools()}")
-        
-        # Call the tool function with task description as search query
-        # All tool functions accept a string query as their first argument
-        result = await tool_fn(description)
-        return result 
 
-    # Reasoning-only task — no tool required
-    # will use accumulated memory context in Phase 6
-    return f"[Reasoning placeholder] Task noted for aggregation: {description}"
+        if not tool_fn:
+            raise ValueError(
+                f"Tool '{tool}' not found in registry."
+            )
+
+        result = await tool_fn(description)
+        return result
+
+    # Reasoning-only task — read accumulated memory context
+    # and send to LLM with the task description
+    context = await get_session_context(session_id)
+
+    # Build the reasoning prompt with full memory context
+    # The LLM uses previous results to perform the current task
+    if context:
+        prompt = (
+            f"{context}\n\n"
+            f"Based on the above results, complete the following task:\n"
+            f"{description}\n\n"
+            f"Provide a clear, detailed response."
+        )
+    else:
+        # No prior context yet — first reasoning task in the session
+        prompt = (
+            f"Complete the following task:\n"
+            f"{description}\n\n"
+            f"Provide a clear, detailed response."
+        )
+
+    # Call the LLM with the context-aware prompt
+    response = _llm_client.chat.completions.create(
+        model=LLM_PLANNER_MODEL,
+        max_tokens=LLM_MAX_TOKENS,
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are HERVEX, an autonomous AI agent executing a task. "
+                    "You have access to results from previous tasks. "
+                    "Use them to complete the current task accurately and thoroughly."
+                )
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    )
+
+    return response.choices[0].message.content

@@ -19,7 +19,7 @@ async def submit_goal(payload: GoalRequest):
     """
     
     try:
-        await create_goal(
+        return await create_goal(
             goal=payload.goal,
             priority=payload.priority
         )

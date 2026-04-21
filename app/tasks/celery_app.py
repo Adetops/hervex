@@ -15,6 +15,7 @@
 from celery import Celery
 from app.core.config import settings
 
+
 # Initialize Celery with Redis as both broker and backend
 # broker: where tasks are queued (Redis list)
 # backend: where task results are stored (Redis hash)
@@ -49,3 +50,7 @@ celery_app.conf.update(
     # Prevents task loss if the worker crashes mid-execution
     task_acks_late=True,
 )
+
+
+if __name__ == '__main__':
+    celery_app.start()
