@@ -19,7 +19,7 @@ LLM_AGGREGATOR_MODEL = "llama-3.3-70b-versatile"
 LLM_MAX_TOKENS = 8096
 
 # Maximum number of tasks the planner can generate for a goal
-MAX_TASKS_PER_GOAL = 10
+MAX_TASKS_PER_GOAL = 6
 
 # App name to be used in logs and API responses
 APP_NAME = "HERVEX"

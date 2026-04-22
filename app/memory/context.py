@@ -82,9 +82,9 @@ async def store_task_result(session_id: str, task_description: str, result: str)
     print(f"[{APP_NAME}] Memory: Stored result for task in session {session_id}. "
           f"Total memory entries: {len(memory)}")
 
-async def get_session_context(session_id: str) -> str:
+async def get_session_context(session_id: str, max_chars: int = 3000) -> str:
     """
-    Retrieves all accumulated task results for a session
+    Retrieves all accumulated task results for a session, truncates to prevent exceeding token limits
     and formats them as a readable context string for the LLM.
 
     Called by the executor before running a reasoning-only task
@@ -92,6 +92,7 @@ async def get_session_context(session_id: str) -> str:
 
     Args:
         session_id: The unique session identifier
+        max_chars: Maximum characters of context to return (default=3000)
 
     Returns:
         A formatted string of all previous task results,
@@ -112,13 +113,21 @@ async def get_session_context(session_id: str) -> str:
     # Each entry shows what was done and what was found
     formatted_entries = []
     for i, entry in enumerate(memory, 1):
+        # Truncate individual result to avoid bloating context
+        result_preview = entry['result'][:500] + "..." \
+            if len(entry['result']) > 500 else entry['result']
+
         formatted_entries.append(
             f"Step {i}:\n"
             f"Task: {entry['task']}\n"
-            f"Result: {entry['result']}\n"
+            f"Result: {result_preview}\n"
         )
 
     context = "Previous task results:\n\n" + "\n".join(formatted_entries)
+    # Final safety truncation on the entire context string
+    if len(context) > max_chars:
+        context = context[:max_chars] + "\n...[context truncated]"
+        
     return context
 
 async def clear_session_memory(session_id: str):

@@ -7,7 +7,7 @@
 # 2. Reasoning-only tasks now read accumulated context from Redis
 #    and pass it to the LLM
 
-
+import asyncio
 from typing import Optional
 from app.db.collections.goals import (
     get_goal_by_session,
@@ -108,6 +108,10 @@ async def execute_goal(session_id: str):
             )
             await increment_failed_tasks(session_id)
             print(f"[{APP_NAME}] Executor: Task {task_id} failed — {error_message}")
+            
+        # Small delay between tasks to avoid hammering Groq's rate limiter
+        # 2 seconds is enough to stay within the TPM window
+        await asyncio.sleep(2)
 
     # All tasks processed — update goal and run status
     await update_goal_status(session_id, GoalStatus.AGGREGATING)

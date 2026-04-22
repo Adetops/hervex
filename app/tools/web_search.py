@@ -10,7 +10,7 @@ from app.core.config import settings
 _client = TavilyClient(api_key=settings.TAVILY_API_KEY)
 
 
-async def web_search(query: str, max_results: int = 5) -> str:
+async def web_search(query: str, max_results: int = 3) -> str:
     """
     Performs a real web search using the Tavily API and returns
     a clean, formatted string of results ready for LLM consumption
@@ -20,7 +20,7 @@ async def web_search(query: str, max_results: int = 5) -> str:
     
     Args:
         query: The search query string extracted from task description
-        max_results: Maximum number of results to return (default: 5)
+        max_results: Maximum number of results to return (default: 3)
         
     Returns:
         A formatted string containing titles, URLs, content summary for each task result.
@@ -48,11 +48,15 @@ async def web_search(query: str, max_results: int = 5) -> str:
     # This format is optimized for LLM consumption in the aggregator
     formatted = []
     for i, result in enumerate(results, 1):
+        # Truncate content to 300 chars to stay within token limits
+        content = result.get('content', 'No content')
+        truncated_content = content[:300] + "..." if (len(content) > 300) else content
+        
         formatted.append(
             f"Result: {i}\n"
             f"Title: {result.get('title', 'No title')}\n"
             f"URL: {result.get('url', 'No URL')}\n"
-            f"Summary: {result.get('content', 'No content')}\n"
+            f"Summary: {truncated_content}\n"
         )
     
     return "\n".join(formatted)
