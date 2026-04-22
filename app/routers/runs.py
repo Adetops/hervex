@@ -14,7 +14,13 @@ router = APIRouter(prefix="/runs", tags=["Runs"])
 async def get_run_status(session_id: str):
     """
     Returns the full execution status of a goal run.
-    The client polls this endpoint to track agent progress.
+    When status is COMPLETED, final_result contains
+    HERVEX's complete synthesized response to the original goal.
+
+    The client flow is:
+    1. POST /goals/ — submit goal, get session_id back immediately
+    2. GET /runs/{session_id} — poll until status is COMPLETED
+    3. Read final_result from the response
 
     Args:
         session_id: The session ID returned when the goal was submitted

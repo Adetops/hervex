@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=APP_NAME,
     description=f"Give {APP_NAME} a goal. It plans, executes, and delivers - autonomously.",
-    version="0.1.0",
+    version="0.7.0",
     lifespan=lifespan
 )
 
