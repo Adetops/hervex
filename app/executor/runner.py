@@ -27,6 +27,7 @@ from app.tools.registry import get_tool
 from app.core.settings import APP_NAME
 from app.memory.context import store_task_result, get_session_context, clear_session_memory
 from groq import Groq
+from loguru import logger
 from app.core.config import settings
 from app.core.settings import LLM_PLANNER_MODEL, LLM_MAX_TOKENS
 
@@ -48,13 +49,13 @@ async def execute_goal(session_id: str):
     goal_doc = await get_goal_by_session(session_id)
 
     if not goal_doc:
-        print(f"[{APP_NAME}] Executor: Goal not found for session {session_id}")
+        logger.error("Executor: Goal not found for the session")
         return
 
     tasks = goal_doc.get("tasks", [])
 
     if not tasks:
-        print(f"[{APP_NAME}] Executor: No tasks found for session {session_id}")
+        logger.error("Executor: No tasks found for the session")
         await update_goal_status(session_id, GoalStatus.FAILED)
         return
 
@@ -66,7 +67,7 @@ async def execute_goal(session_id: str):
     )
     await insert_run(run_doc)
 
-    print(f"[{APP_NAME}] Executor: Starting run for session {session_id} — {len(tasks)} tasks")
+    logger.info(f"Executor: Starting run for session {session_id} — {len(tasks)} tasks")
 
     # Process each task sequentially
     for task in tasks:
@@ -74,7 +75,7 @@ async def execute_goal(session_id: str):
         description = task["description"]
         tool = task.get("tool")
 
-        print(f"[{APP_NAME}] Executor: Running task {task_id} — {description}")
+        logger.info(f"Executor: Running task {task_id} — {description}")
 
         # Mark the task as running before execution begins
         await update_task_status(session_id, task_id, TaskStatus.RUNNING)
@@ -95,7 +96,7 @@ async def execute_goal(session_id: str):
             await store_task_result(session_id, description, result)
 
             await increment_completed_tasks(session_id)
-            print(f"[{APP_NAME}] Executor: Task {task_id} completed.")
+            logger.info(f"Executor: Task {task_id} completed.")
 
         except Exception as e:
             # Mark the task as failed but continue to the next task
@@ -107,7 +108,7 @@ async def execute_goal(session_id: str):
                 error=error_message
             )
             await increment_failed_tasks(session_id)
-            print(f"[{APP_NAME}] Executor: Task {task_id} failed — {error_message}")
+            logger.error(f"Executor: Task {task_id} failed — {error_message}")
             
         # Small delay between tasks to avoid hammering Groq's rate limiter
         # 2 seconds is enough to stay within the TPM window
@@ -116,7 +117,7 @@ async def execute_goal(session_id: str):
     # All tasks processed — update goal and run status
     await update_goal_status(session_id, GoalStatus.AGGREGATING)
     await complete_run(session_id, GoalStatus.AGGREGATING)
-    print(f"[{APP_NAME}] Executor: All tasks processed for session {session_id}. Ready for aggregation.")
+    logger.info(f"Executor: All tasks processed for session {session_id}. Ready for aggregation.")
 
 async def _execute_task(session_id: str, description: str, tool: Optional[str]) -> str:
     """

@@ -8,6 +8,7 @@
 # from app.executor.runner import execute_goal
 from app.tasks.agent_tasks import execute_goal_task
 from app.core.settings import APP_NAME
+from loguru import logger
 
 async def run_agent(session_id: str):
     """
@@ -20,10 +21,10 @@ async def run_agent(session_id: str):
     Args:
         session_id: The unique session identifier of the goal to execute
     """
-    print(f"[{APP_NAME}] Agent service: Dispatching Celery task for session {session_id}")
+    logger.info(f"Agent service: Dispatching Celery task for session {session_id}")
 
     # .delay() sends the task to the Redis queue and returns immediately
     # The Celery worker picks it up asynchronously
     execute_goal_task.delay(session_id)
 
-    print(f"[{APP_NAME}] Agent service: Task queued. API returning immediately.")
+    logger.info(f"Agent service: Task queued. API returning immediately.")

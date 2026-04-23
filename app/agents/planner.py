@@ -72,15 +72,6 @@ async def plan_goal(goal: str) -> List[dict]:
     Raises:
         ValueError: if the LLM returns an invalid or unparseable response.
     """
-    
-    # try:
-    #     print(f"Verified Length: {len(settings.SECRET_GROQ_KEY)}")
-    #     # A simple, cheap call to list models to verify the key works
-    #     client.models.list()
-    #     print("Groq API Key Verified.")
-    # except Exception as e:
-    #     print(f"CRITICAL: Groq API Key is invalid at the server level: {e}")
-
     # Groq uses the same chat completions format as OpenAI
     # system prompt goes in the system role message
     # goal goes in the user role message

@@ -14,6 +14,7 @@
 # persistence. MongoDB is for long-term storage after the run ends.
 
 import json
+from loguru import logger
 import redis.asyncio as aioredis
 from app.core.config import settings
 from app.core.settings import APP_NAME
@@ -79,7 +80,7 @@ async def store_task_result(session_id: str, task_description: str, result: str)
         json.dumps(memory)
     )
 
-    print(f"[{APP_NAME}] Memory: Stored result for task in session {session_id}. "
+    logger.info(f"[{APP_NAME}] Memory: Stored result for task in session {session_id}. "
           f"Total memory entries: {len(memory)}")
 
 async def get_session_context(session_id: str, max_chars: int = 3000) -> str:
@@ -141,4 +142,4 @@ async def clear_session_memory(session_id: str):
     """
     key = _memory_key(session_id)
     await _redis_client.delete(key)
-    print(f"[{APP_NAME}] Memory: Cleared session memory for {session_id}")
+    logger.info(f"Memory: Cleared session memory for {session_id}")

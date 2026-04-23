@@ -13,6 +13,7 @@
 # coherent, well-structured response the client can actually use.
 
 from groq import Groq
+from loguru import logger
 from app.core.config import settings
 from app.core.settings import LLM_AGGREGATOR_MODEL, LLM_MAX_TOKENS, APP_NAME
 from app.db.collections.goals import get_goal_with_tasks, update_goal_status
@@ -69,8 +70,8 @@ async def aggregate_results(session_id: str) -> str:
             f"Aggregator: No completed tasks found for session {session_id}"
         )
 
-    print(
-        f"[{APP_NAME}] Aggregator: Synthesizing {len(completed_tasks)} "
+    logger.info(
+        f"Aggregator: Synthesizing {len(completed_tasks)} "
         f"task results for session {session_id}"
     )
 
@@ -107,7 +108,7 @@ async def aggregate_results(session_id: str) -> str:
     # Mark the goal as fully completed
     await update_goal_status(session_id, GoalStatus.COMPLETED)
 
-    print(f"[{APP_NAME}] Aggregator: Session {session_id} completed successfully.")
+    logger.info(f"Aggregator: Session {session_id} completed successfully.")
 
     return final_result
 

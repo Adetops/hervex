@@ -3,6 +3,7 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.core.config import settings
 from app.core.settings import APP_NAME
+from loguru import logger
 
 
 # Global mongoDB client instance
@@ -13,7 +14,7 @@ async def connect_to_mongodb():
     '''
     global client
     client = AsyncIOMotorClient(settings.MONGODB_URI)
-    print(f"[{APP_NAME}] connected to MongoDB successfully!")
+    logger.info("Connected to MongoDB successfully!")
 
 
 async def close_mongodb_connection():
@@ -22,7 +23,7 @@ async def close_mongodb_connection():
     global client
     if client:
         client.close()
-        print(f"[{APP_NAME}] MongoDB connection closed.")
+        logger.info("MongoDB connection closed.")
 
 
 def get_database():

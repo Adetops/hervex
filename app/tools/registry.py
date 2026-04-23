@@ -10,12 +10,17 @@
 
 from typing import Callable, Dict, Optional
 from app.tools.web_search import web_search
+from app.tools.calculator import calculate
 
 
 # Tool Registry: maps tool name strings to their async function
 # The planner uses these exact string keys when assigning tools to tasks
 TOOL_REGISTRY: Dict[str, Callable] = {
     "web_search": web_search,
+    
+    # Calculator — evaluates mathematical expressions safely
+    "calculator": calculate,
+    
     # future tools:
     # "calculator": calculate,
     # "file_reader": read_file,

@@ -7,6 +7,7 @@
 # The full pipeline is now connected end to end.
 
 import asyncio
+from loguru import logger
 from app.tasks.celery_app import celery_app
 from app.core.settings import APP_NAME
 
@@ -27,7 +28,7 @@ def execute_goal_task(self, session_id: str):
     Args:
         session_id: The unique session identifier of the goal to execute
     """
-    print(f"[{APP_NAME}] Celery worker: Picked up task for session {session_id}")
+    logger.info(f"Celery worker: Picked up task for session {session_id}")
 
     try:
         from app.db.connection import connect_to_mongodb
@@ -53,7 +54,7 @@ def execute_goal_task(self, session_id: str):
         asyncio.run(run())
 
     except Exception as exc:
-        print(
+        logger.debug(
             f"[{APP_NAME}] Celery worker: Pipeline failed "
             f"for session {session_id} — {exc}"
         )

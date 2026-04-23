@@ -4,12 +4,14 @@
 
 
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import ConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = ConfigDict(env_file=".env", extra="ignore")
+    
     # Groq API key for Llama/Gemma models
-    SECRET_GROQ_KEY: str = Field(..., str_strip_whitespace=True)
+    SECRET_GROQ_KEY: str
     
     # Tavily API tool for web search tool
     TAVILY_API_KEY: str
@@ -25,13 +27,5 @@ class Settings(BaseSettings):
     # App environment - "dev" or "prod"
     APP_ENV: str = "development"
     
-    
-    class Config:
-        ''' Tells pydantic-settings where to locate .env file
-        '''
-        env_file = ".env"
-        extra = "ignore"
-        env_file_encoding = 'utf-8'
-
 # single shared instance
 settings = Settings()

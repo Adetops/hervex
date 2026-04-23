@@ -5,6 +5,7 @@
 
 from app.aggregator.result import aggregate_results
 from app.core.settings import APP_NAME
+from loguru import logger
 
 async def finalize_result(session_id: str) -> str:
     """
@@ -17,7 +18,7 @@ async def finalize_result(session_id: str) -> str:
     Returns:
         The final synthesized response string
     """
-    print(f"[{APP_NAME}] Result service: Starting aggregation for session {session_id}")
+    logger.info(f"Result service: Starting aggregation for session {session_id}")
     final_result = await aggregate_results(session_id)
-    print(f"[{APP_NAME}] Result service: Aggregation complete for session {session_id}")
+    logger.info(f"Result service: Aggregation complete for session {session_id}")
     return final_result
