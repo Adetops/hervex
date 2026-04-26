@@ -1,0 +1,60 @@
+# render.yaml defines all HERVEX services declaratively.
+# Render reads this file and creates all services automatically
+# when you connect your GitHub repository.
+# This means your entire infrastructure is version controlled.
+
+services:
+  # FastAPI web server — handles all incoming API requests
+  - type: web
+    name: hervex-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app.main:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: hervex
+      - key: REDIS_URL
+        fromService:
+          name: hervex-redis
+          type: redis
+          property: connectionString
+
+  # Celery background worker — executes agent tasks asynchronously
+  # Render's Background Worker type has no HTTP port
+  # It just runs the process continuously
+  - type: worker
+    name: hervex-worker
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A app.tasks.celery_app worker --loglevel=info
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: hervex
+      - key: REDIS_URL
+        fromService:
+          name: hervex-redis
+          type: redis
+          property: connectionString
+
+# Render managed Redis instance
+# Free tier available — shared instance
+databases:
+  - name: hervex-redis
+    type: redis
+    plan: free

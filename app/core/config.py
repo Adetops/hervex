@@ -27,5 +27,7 @@ class Settings(BaseSettings):
     # App environment - "dev" or "prod"
     APP_ENV: str = "development"
     
+    PORT: int = 8000
+    
 # single shared instance
 settings = Settings()
