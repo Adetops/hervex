@@ -54,7 +54,6 @@ services:
 
 # Render managed Redis instance
 # Free tier available — shared instance
-databases:
+redis:
   - name: hervex-redis
-    type: redis
     plan: free
