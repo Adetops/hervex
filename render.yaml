@@ -57,3 +57,4 @@ services:
   - type: redis
     name: hervex-redis
     plan: free
+    ipAllowList: []
