@@ -52,8 +52,8 @@ services:
           type: redis
           property: connectionString
 
-# Render managed Redis instance
-# Free tier available — shared instance
-redis:
-  - name: hervex-redis
+  # Render managed Redis instance
+  # Free tier available — shared instance
+  - type: redis
+    name: hervex-redis
     plan: free
