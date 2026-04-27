@@ -12,7 +12,7 @@ services:
     startCommand: gunicorn app.main:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
     envVars:
       - key: APP_ENV
-        value: production
+        value: development
       - key: GROQ_API_KEY
         sync: false
       - key: TAVILY_API_KEY
@@ -37,7 +37,7 @@ services:
     startCommand: celery -A app.tasks.celery_app worker --loglevel=info
     envVars:
       - key: APP_ENV
-        value: production
+        value: development
       - key: GROQ_API_KEY
         sync: false
       - key: TAVILY_API_KEY
