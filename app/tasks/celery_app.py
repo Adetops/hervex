@@ -49,8 +49,8 @@ celery_app.conf.update(
     # Task acknowledgement — mark task as done only after completion
     # Prevents task loss if the worker crashes mid-execution
     task_acks_late=True,
-    broker_use_ssl={'ssl_cert_reqs': ssl.CERT_NONE},
-    redis_backend_use_ssl={'ssl_cert_reqs': ssl.CERT_NONE},
+    # broker_use_ssl={'ssl_cert_reqs': ssl.CERT_NONE},
+    # redis_backend_use_ssl={'ssl_cert_reqs': ssl.CERT_NONE},
 )
 
 
