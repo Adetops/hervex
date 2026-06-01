@@ -1,6 +1,5 @@
-# config.py loads env variables from .env file
-# and makes them available throughout the application
-# pydantic settings ensures all variables are type-checked on start-up.
+# config.py — updated for education branch
+# Added Pinecone and OpenAI keys for RAG pipeline
 
 
 from pydantic_settings import BaseSettings
@@ -28,6 +27,14 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     
     PORT: int = 8000
+    
+    # Pinecone — vector database for institution knowledge
+    PINECONE_API_KEY: str
+    PINECONE_INDEX_NAME: str = "hervex-education"
+
+    # OpenAI — used only for text embeddings, not chat
+    # text-embedding-3-small converts text chunks to 1536-dimensional vectors
+    OPENAI_API_KEY: str
     
 # single shared instance
 settings = Settings()

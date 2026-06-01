@@ -1,11 +1,8 @@
-# settings.py holds hervex constants and configurations that are not sensitive
-# enough to be in .env file but must be consistent across entire codebase
+# settings.py — updated for education branch
+# Added chunking and embedding configuration constants
 
 from app.core.config import settings
 
-
-# LLM model to use for all Claude API calls
-# LLM_MODEL = "claude-sonnet-4-20250514"
 
 # Model for planning and task reasoning
 LLM_PLANNER_MODEL = "llama-3.3-70b-versatile"
@@ -23,3 +20,24 @@ MAX_TASKS_PER_GOAL = 6
 
 # App name to be used in logs and API responses
 APP_NAME = "HERVEX"
+
+# Embedding model — OpenAI ada-002 produces 1536-dimensional vectors
+# Must match the dimensions set in your Pinecone index
+EMBEDDING_MODEL = "text-embedding-ada-002"
+EMBEDDING_DIMENSIONS = 1536
+
+# Chunking configuration
+# CHUNK_SIZE: max characters per chunk sent to Pinecone
+# Too large = less precise retrieval
+# Too small = loses context
+# reliable starting point for academic documents
+CHUNK_SIZE = 1000
+
+# CHUNK_OVERLAP: characters shared between consecutive chunks
+# Prevents important content from being split across chunk boundaries
+CHUNK_OVERLAP = 200
+
+# RAG retrieval configuration
+# Number of chunks retrieved from Pinecone per query
+# 5 gives enough context without overwhelming the LLM
+RAG_TOP_K = 5
