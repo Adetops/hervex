@@ -1,8 +1,5 @@
-# Entry point of HERVEX. It initializes FastAPI app, registers all routers
-# and manages MonogoDB connection lifecycle through FastAPI startup and shutdown events.
-# Added: logging setup, exception handlers, rate limiter,
-# logs directory creation, and version bumped to 1.0.0.
-# HERVEX is now production-ready.
+# main.py — updated for education branch
+# Added documents router for document ingestion endpoints
 
 
 import os
@@ -10,7 +7,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from app.routers import goals, health, runs
+from app.routers import goals, health, runs, documents
 from app.db.connection import close_mongodb_connection, connect_to_mongodb
 from app.core.settings import APP_NAME
 from app.core.logging import setup_logging
@@ -47,5 +44,6 @@ register_exception_handlers(app)
 
 app.include_router(goals.router)
 app.include_router(runs.router)
+app.include_router(documents.router)
 app.include_router(health.router)
 
