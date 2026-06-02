@@ -1,43 +1,40 @@
-# goals.py — updated for Phase 8
-# Added rate limiting: 10 goal submissions per minute per IP.
-# This prevents a single client from exhausting Groq/Tavily quotas.
-# Custom exceptions replace generic try/except blocks.
+# goals.py — updated
+# Passes institution_id from request payload to goal_service.
 
 from fastapi import APIRouter, HTTPException, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
 from loguru import logger
 from app.schemas.goal import GoalRequest, GoalResponse
 from app.services.goal_service import create_goal
 from app.exceptions.handlers import PlannerException
 from app.core.rate_limiter import limiter
+from app.core.settings import APP_NAME
 
 router = APIRouter(prefix="/goals", tags=["Goals"])
 
 @router.post("/", response_model=GoalResponse, status_code=201)
-@limiter.limit("10/minute")  # Max 10 goal submissions per minute per IP
+@limiter.limit("10/minute")
 async def submit_goal(request: Request, payload: GoalRequest):
     """
-    Endpoint to submit a new goal to HERVEX.
-    Rate limited to 10 requests per minute per IP address.
-    Returns a session ID immediately — execution runs in background.
-
-    Args:
-        request: FastAPI request object (required by slowapi for IP extraction)
-        payload: The validated goal request body
+    Submits a new goal to HERVEX.
+    Returns a session_id immediately — execution runs in background.
+    The institution_id in the payload determines which knowledge
+    base HERVEX searches for curriculum content.
     """
-    logger.info(f"New goal received: {payload.goal[:50]}...")
+    logger.info(
+        f"[{APP_NAME}] New goal received for institution "
+        f"'{payload.institution_id}': {payload.goal[:50]}..."
+    )
 
     try:
         return await create_goal(
             goal=payload.goal,
-            priority=payload.priority
+            priority=payload.priority,
+            institution_id=payload.institution_id
         )
     except ValueError as e:
         raise PlannerException(detail=str(e))
     except Exception as e:
-        logger.error(f"Goal creation failed: {str(e)}")
+        logger.error(f"[{APP_NAME}] Goal creation failed: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=f"HERVEX encountered an error: {str(e)}"

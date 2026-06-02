@@ -1,37 +1,44 @@
-# goal_document.py defines the shape of a goal as stored in MongoDB
+# goal_document.py — updated for Phase 5
+# Added institution_id field so goals are tied to institutions
+# and the executor can enforce namespace isolation during RAG.
 
 from datetime import datetime, timezone
 from typing import Optional
 from app.enums.status import GoalStatus, Priority
 
-
 class GoalDocument:
     """
     Represents a goal document in the MongoDB 'goals' collection.
-    Not a pydantic model - used as a plain dictionary builder to keep
-    MongoDB operations explicit and readable
     """
-    
+
     @staticmethod
-    def create(session_id: str, goal: str, priority: Priority) -> dict:
+    def create(
+        session_id: str,
+        goal: str,
+        priority: Priority,
+        institution_id: str = "default"
+    ) -> dict:
         """
-        Builds a new goal document to insert into MongoDB
-        
+        Builds a new goal document ready for MongoDB insertion.
+
         Args:
-            session_id: Unique identifier for current agent session
-            goal: The goal string submitted by the user/client
-            priority: Goal execution priority level
-        
+            session_id: Unique identifier for this agent session
+            goal: The raw goal string submitted by the client
+            priority: Execution priority level
+            institution_id: Institution this goal belongs to
+                           Used by executor for RAG namespace isolation
+
         Returns:
-            A dictionary that represents MongoDB document
+            A dictionary representing the MongoDB document
         """
         return {
             "session_id": session_id,
             "goal": goal,
             "priority": priority,
+            "institution_id": institution_id,
             "status": GoalStatus.RECEIVED,
-            "tasks": [],               # populated by the planner in Phase 2
-            "final_result": None,      # populated by the Result Aggregator in Phase 7
+            "tasks": [],
+            "final_result": None,
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
+            "updated_at": datetime.now(timezone.utc).isoformat(),
         }

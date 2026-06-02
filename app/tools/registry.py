@@ -11,18 +11,24 @@
 from typing import Callable, Dict, Optional
 from app.tools.web_search import web_search
 from app.tools.calculator import calculate
+from app.tools.rag_search import rag_search
 
 
 # Tool Registry: maps tool name strings to their async function
 # The planner uses these exact string keys when assigning tools to tasks
 TOOL_REGISTRY: Dict[str, Callable] = {
+    # Searches institution's uploaded curriculum documents
+    # Returns chunks labelled as school materials
+    "rag_search": rag_search,
+
+    # Searches the live internet via Tavily
+    # Used when curriculum documents don't cover the topic
     "web_search": web_search,
     
     # Calculator — evaluates mathematical expressions safely
     "calculator": calculate,
     
     # future tools:
-    # "calculator": calculate,
     # "file_reader": read_file,
     # "email_sender": send_email,
 }
