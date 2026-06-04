@@ -62,7 +62,7 @@ def test_submit_goal_too_short():
     is rejected with a 422 validation error.
     """
     response = client.post(
-        "/goals/",
+        "/v1/goal/",
         json={
             "goal": "Too short",
             "priority": "normal"

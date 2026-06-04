@@ -32,7 +32,7 @@ async def create_goal(
         institution_id: Institution this goal belongs to
 
     Returns:
-        GoalResponse with session_id — client polls for progress
+        GoalResponse — client uses run_id to poll for progress
     """
     session_id = str(uuid.uuid4())
 
@@ -52,12 +52,12 @@ async def create_goal(
     await run_agent(session_id)
 
     logger.info(
-        f"[{APP_NAME}] Goal Service: Goal created for "
-        f"institution '{institution_id}' — session {session_id}"
+        f"[{APP_NAME}] Goal Service: Goal created — "
+        f"run_id: {session_id} — institution: {institution_id}"
     )
 
     return GoalResponse(
-        session_id=session_id,
+        run_id=session_id,
         goal=goal,
         status=GoalStatus.PLANNING,
         priority=priority,
@@ -66,6 +66,6 @@ async def create_goal(
         message=(
             f"HERVEX has planned {len(tasks)} tasks. "
             f"Execution started in background. "
-            f"Poll /runs/{session_id} for progress."
+            f"Poll /v1/result/{session_id} for progress."
         )
     )

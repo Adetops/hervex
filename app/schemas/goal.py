@@ -24,7 +24,7 @@ class GoalRequest(BaseModel):
     )
 
 class GoalResponse(BaseModel):
-    session_id: str
+    run_id: str
     goal: str
     status: GoalStatus
     priority: Priority

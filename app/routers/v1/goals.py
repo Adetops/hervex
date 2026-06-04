@@ -9,16 +9,19 @@ from app.exceptions.handlers import PlannerException
 from app.core.rate_limiter import limiter
 from app.core.settings import APP_NAME
 
-router = APIRouter(prefix="/goals", tags=["Goals"])
+router = APIRouter(prefix="/v1", tags=["Goals"])
 
-@router.post("/", response_model=GoalResponse, status_code=201)
+@router.post("/goal", response_model=GoalResponse, status_code=201)
 @limiter.limit("10/minute")
 async def submit_goal(request: Request, payload: GoalRequest):
     """
     Submits a new goal to HERVEX.
-    Returns a session_id immediately — execution runs in background.
+    
     The institution_id in the payload determines which knowledge
     base HERVEX searches for curriculum content.
+    
+    Returns a run_id immediately. Poll GET /v1/result/{run_id}
+    to check execution progress and retrieve the final result.
     """
     logger.info(
         f"[{APP_NAME}] New goal received for institution "

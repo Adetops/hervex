@@ -38,3 +38,16 @@ class DocumentStatus(str, Enum):
     PROCESSING = "processing"
     INDEXED = "indexed"
     FAILED = "failed"
+
+
+class FeedbackRating(int, Enum):
+    """
+    Five-point rating scale for student and lecturer feedback.
+    Used to identify poorly performing responses for improvement.
+    1 = very poor, 5 = excellent.
+    """
+    VERY_POOR = 1
+    POOR = 2
+    AVERAGE = 3
+    GOOD = 4
+    EXCELLENT = 5

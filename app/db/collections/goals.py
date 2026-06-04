@@ -3,8 +3,10 @@
 
 from datetime import datetime, timezone
 from typing import Optional
+from loguru import logger
 from app.db.connection import get_database
 from app.enums.status import GoalStatus
+from app.core.settings import APP_NAME
 
 
 async def insert_goal(goal_document: dict) -> str:
@@ -90,3 +92,29 @@ async def get_goal_with_tasks(session_id: str) -> Optional[dict]:
     """
     db = get_database()
     return await db.goals.find_one({"session_id": session_id})
+
+async def get_goal_status_only(session_id: str) -> Optional[dict]:
+    """
+    Returns lightweight status fields only — no task list or result.
+    Used by GET /v1/status/{run_id} for efficient polling.
+    Projects only the fields needed to reduce MongoDB read cost.
+
+    Args:
+        session_id: The unique session/run identifier
+
+    Returns:
+        Dictionary with status fields or None if not found
+    """
+    db = get_database()
+    return await db.goals.find_one(
+        {"session_id": session_id},
+        # Projection — only return these fields
+        {
+            "session_id": 1,
+            "status": 1,
+            "institution_id": 1,
+            "created_at": 1,
+            "updated_at": 1,
+            "_id": 0
+        }
+    )
